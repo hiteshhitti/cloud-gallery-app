@@ -1,31 +1,23 @@
-import os                     # 🔥 MUST BE FIRST
+# ================= IMPORTS =================
+import os
 import streamlit as st
 import cloudinary
 import cloudinary.api
 from cloudinary.search import Search
-
-
 
 # ================= PAGE CONFIG =================
 st.set_page_config(layout="wide")
 st.title("☁️ My Cloud Gallery")
 
 # ================= CLOUDINARY CONFIG =================
-# cloudinary.config(
-#     cloud_name=os.getenv("CLOUDINARY_CLOUD_NAME"),
-#     api_key=os.getenv("CLOUDINARY_API_KEY"),
-#     api_secret=os.getenv("CLOUDINARY_API_SECRET")
-# )
-
-THUMB_SIZE = 180   # px, change if you want (150–220 good range)
-
 cloudinary.config(
     cloud_name=os.environ.get("CLOUDINARY_CLOUD_NAME"),
     api_key=os.environ.get("CLOUDINARY_API_KEY"),
     api_secret=os.environ.get("CLOUDINARY_API_SECRET")
 )
 
-ROOT_FOLDER = "mygallery"   # ⚠️ EXACT same naam Cloudinary folder ka
+ROOT_FOLDER = "mygallery"   # ⚠️ exact Cloudinary folder name
+THUMB_SIZE = 180            # square thumbnail size (px)
 
 # ================= SESSION STATE =================
 if "current_album" not in st.session_state:
@@ -43,39 +35,16 @@ def get_albums():
         st.error(f"Album fetch error: {e}")
         return []
 
-# def get_images(album):
-#     images = []
-#     next_cursor = None
-
-#     while True:
-#         res = cloudinary.api.resources(
-#             type="upload",
-#             resource_type="image",                 # 🔥 MUST
-#             prefix=f"{ROOT_FOLDER}/{album}/",      # 🔥 trailing slash
-#             max_results=100,
-#             next_cursor=next_cursor
-#         )
-
-#         for r in res.get("resources", []):
-#             images.append(r["secure_url"])
-
-#         next_cursor = res.get("next_cursor")
-#         if not next_cursor:
-#             break
-
-#     return images
-
 def get_images(album):
     images = []
     next_cursor = None
 
     while True:
-        search = Search().expression(
-            f"folder:{ROOT_FOLDER}/{album}"
-        ).sort_by(
-            "created_at", "desc"
-        ).max_results(
-            100
+        search = (
+            Search()
+            .expression(f"folder:{ROOT_FOLDER}/{album}")
+            .sort_by("created_at", "desc")
+            .max_results(100)
         )
 
         if next_cursor:
@@ -92,7 +61,14 @@ def get_images(album):
 
     return images
 
-
+def make_square_thumb(url, size=180):
+    """
+    Convert Cloudinary image URL into square thumbnail
+    """
+    return url.replace(
+        "/upload/",
+        f"/upload/w_{size},h_{size},c_fill,g_auto/"
+    )
 
 # ================= FULLSCREEN VIEW =================
 if st.session_state.fullscreen_image:
@@ -100,7 +76,10 @@ if st.session_state.fullscreen_image:
         st.session_state.fullscreen_image = None
         st.rerun()
 
-    st.image(st.session_state.fullscreen_image, use_container_width=True)
+    st.image(
+        st.session_state.fullscreen_image,
+        use_container_width=True
+    )
 
 # ================= ALBUM VIEW =================
 elif st.session_state.current_album is None:
@@ -109,7 +88,7 @@ elif st.session_state.current_album is None:
     albums = get_albums()
 
     if not albums:
-        st.warning("No albums found. Check folder structure in Cloudinary.")
+        st.warning("No albums found. Check Cloudinary folder structure.")
 
     cols = st.columns(4)
     for i, album in enumerate(albums):
@@ -119,28 +98,6 @@ elif st.session_state.current_album is None:
                 st.rerun()
 
 # ================= IMAGE GRID VIEW =================
-# else:
-#     album = st.session_state.current_album
-#     st.subheader(f"🖼️ {album}")
-
-#     if st.button("⬅ Back to Albums"):
-#         st.session_state.current_album = None
-#         st.rerun()
-
-#     images = get_images(album)
-
-#     if not images:
-#         st.warning("No images found in this album")
-
-#     cols = st.columns(5)
-#     for i, img_url in enumerate(images):
-#         with cols[i % 5]:
-#             st.image(img_url, use_container_width=True)
-#             if st.button("🔍 View", key=img_url):
-#                 st.session_state.fullscreen_image = img_url
-#                 st.rerun()
-
-
 else:
     album = st.session_state.current_album
     st.subheader(f"🖼️ {album}")
@@ -152,16 +109,19 @@ else:
     images = get_images(album)
 
     if not images:
-        st.warning("No images found in this album")
+        st.warning("No images found in this album.")
 
-    cols = st.columns(5)   # 5 thumbnails per row
+    cols = st.columns(5)   # thumbnails per row
 
     for i, img_url in enumerate(images):
         with cols[i % 5]:
+            thumb_url = make_square_thumb(img_url, THUMB_SIZE)
+
             st.image(
-                img_url,
-                width=THUMB_SIZE   # 🔥 small square thumbnail
+                thumb_url,
+                width=THUMB_SIZE
             )
+
             if st.button("🔍 View", key=img_url):
                 st.session_state.fullscreen_image = img_url
                 st.rerun()
