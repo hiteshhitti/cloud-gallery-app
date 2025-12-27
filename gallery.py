@@ -17,6 +17,8 @@ st.title("☁️ My Cloud Gallery")
 #     api_secret=os.getenv("CLOUDINARY_API_SECRET")
 # )
 
+THUMB_SIZE = 180   # px, change if you want (150–220 good range)
+
 cloudinary.config(
     cloud_name=os.environ.get("CLOUDINARY_CLOUD_NAME"),
     api_key=os.environ.get("CLOUDINARY_API_KEY"),
@@ -117,6 +119,28 @@ elif st.session_state.current_album is None:
                 st.rerun()
 
 # ================= IMAGE GRID VIEW =================
+# else:
+#     album = st.session_state.current_album
+#     st.subheader(f"🖼️ {album}")
+
+#     if st.button("⬅ Back to Albums"):
+#         st.session_state.current_album = None
+#         st.rerun()
+
+#     images = get_images(album)
+
+#     if not images:
+#         st.warning("No images found in this album")
+
+#     cols = st.columns(5)
+#     for i, img_url in enumerate(images):
+#         with cols[i % 5]:
+#             st.image(img_url, use_container_width=True)
+#             if st.button("🔍 View", key=img_url):
+#                 st.session_state.fullscreen_image = img_url
+#                 st.rerun()
+
+
 else:
     album = st.session_state.current_album
     st.subheader(f"🖼️ {album}")
@@ -130,10 +154,14 @@ else:
     if not images:
         st.warning("No images found in this album")
 
-    cols = st.columns(5)
+    cols = st.columns(5)   # 5 thumbnails per row
+
     for i, img_url in enumerate(images):
         with cols[i % 5]:
-            st.image(img_url, use_container_width=True)
+            st.image(
+                img_url,
+                width=THUMB_SIZE   # 🔥 small square thumbnail
+            )
             if st.button("🔍 View", key=img_url):
                 st.session_state.fullscreen_image = img_url
                 st.rerun()
