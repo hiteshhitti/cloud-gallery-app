@@ -2,6 +2,7 @@ import streamlit as st
 import cloudinary
 import cloudinary.api
 from cloudinary.search import Search
+import os
 
 
 # ================= PAGE CONFIG =================
